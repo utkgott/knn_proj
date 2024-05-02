@@ -1,0 +1,202 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.metrics import classification_report
+
+def get_report(y_true, y_pred, target_names=None):
+
+  report = classification_report(y_true, y_pred, target_names=target_names)
+  return report
+
+def calculate_accuracy(predicted_labels, true_labels):
+
+    if len(predicted_labels) != len(true_labels):
+        raise ValueError("Length of predicted_labels and true_labels must be the same.")
+
+    correct_predictions = sum(1 for pred, true in zip(predicted_labels, true_labels) if pred == true)
+    total_predictions = len(predicted_labels)
+    accuracy = correct_predictions / total_predictions
+
+    return accuracy
+
+df = pd.read_csv('/content/Iris.csv')
+
+df.shape
+
+df
+
+print(f"The number of Rows : {df.shape[0]}\nThe number of columns : {df.shape[1]}")
+
+#Encoding
+
+
+def encode_species(s):
+    if s == 'Iris-setosa':
+        return 0
+    elif s == 'Iris-versicolor':
+        return 1
+    else :  #Iris-virginica
+        return 2
+
+def decode_species(s):
+    if s == 0:
+        return 'Iris-setosa'
+    elif s == 1:
+        return 'Iris-versicolor'
+    else : #s == 2
+        return 'Iris-virginica'
+
+df['Species'] = df['Species'].apply(lambda x : encode_species(x))
+
+#converting datatype to integer
+df['Species'] = df['Species'].astype('int32')
+
+df.head(3)
+
+df.value_counts('Species')
+
+#Split data
+
+x = df.drop(['Id','Species'], axis = 1).values
+y = df.iloc[:,-1].values
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.25, random_state= 42, stratify = y)
+
+print(f"""SHAPES :
+x_train : {x_train.shape}
+y_train : {y_train.shape}
+x_test : {x_test.shape}
+y_test : {y_test.shape}""")
+
+#Model building
+
+#with normal knn algorithm
+
+import math
+
+def euclidean_distance(point1, point2):
+    distance = math.sqrt(sum([(a - b) ** 2 for a, b in zip(point1, point2)]))
+    return distance
+
+def manhattan_distance(point1, point2):
+    distance = sum(abs(a - b) for a, b in zip(point1, point2))
+    return distance
+
+
+
+#Euclidean distance
+
+
+def k_nearest_neighbors(train_data, test_point, k):
+    distances = [(euclidean_distance(train_point[0], test_point), train_point[1]) for train_point in train_data]
+    distances.sort()  # Sort distances in ascending order
+    nearest_neighbors = distances[:k]  # Select the k nearest neighbors
+    return nearest_neighbors
+
+def classify(test_point, train_data, k):
+    nearest_neighbors = k_nearest_neighbors(train_data, test_point, k)
+    votes = {}
+    for distance, label in nearest_neighbors:
+        votes[label] = votes.get(label, 0) + 1
+    max_votes_label = max(votes, key=votes.get)
+    return max_votes_label
+
+train_data = list(zip(x_train, y_train))
+
+y_pred = [classify(test_point, train_data, k=5) for test_point in x_test]
+
+report = get_report(y_test, y_pred)
+print(report)
+
+accuracy = calculate_accuracy(y_pred, y_test)
+print("Accuracy:", accuracy)
+
+#Manhattan distance
+
+def k_nearest_neighbors(train_data, test_point, k):
+    distances = [(manhattan_distance(train_point[0], test_point), train_point[1]) for train_point in train_data]
+    distances.sort()  # Sort distances in ascending order
+    nearest_neighbors = distances[:k]  # Select the k nearest neighbors
+    return nearest_neighbors
+
+def classify(test_point, train_data, k):
+    nearest_neighbors = k_nearest_neighbors(train_data, test_point, k)
+    votes = {}
+    for distance, label in nearest_neighbors:
+        votes[label] = votes.get(label, 0) + 1
+    max_votes_label = max(votes, key=votes.get)
+    return max_votes_label
+
+train_data = list(zip(x_train, y_train))
+
+y_pred = [classify(test_point, train_data, k=5) for test_point in x_test]
+
+report = get_report(y_test, y_pred)
+print(report)
+
+#with a modified version of the k-Nearest Neighbors (KNN) algorithm that considers neighbors within a specified radius instead of a fixed number of neighbors (k)
+
+#Euclidean distance
+
+
+def neighbors_within_radius(train_data, test_point, radius):
+    neighbors = []
+    for train_point, label in train_data:
+        distance = euclidean_distance(train_point, test_point)
+        if distance <= radius:
+            neighbors.append((distance, label))
+    return neighbors
+
+def classify(test_point, train_data, radius):
+    neighbors = neighbors_within_radius(train_data, test_point, radius)
+    if not neighbors:
+        return None
+    votes = {}
+    for distance, label in neighbors:
+        votes[label] = votes.get(label, 0) + 1
+    max_votes_label = max(votes, key=votes.get)
+    return max_votes_label
+
+
+
+train_data = list(zip(x_train, y_train))
+
+y_pred = [classify(test_point, train_data, radius = 3) for test_point in x_test]
+
+report = get_report(y_test, y_pred)
+print(report)
+
+#Manhattan distance
+
+
+def neighbors_within_radius(train_data, test_point, radius):
+    neighbors = []
+    for train_point, label in train_data:
+        distance = manhattan_distance(train_point, test_point)
+        if distance <= radius:
+            neighbors.append((distance, label))
+    return neighbors
+
+def classify(test_point, train_data, radius):
+    neighbors = neighbors_within_radius(train_data, test_point, radius)
+    if not neighbors:
+        return None
+    votes = {}
+    for distance, label in neighbors:
+        votes[label] = votes.get(label, 0) + 1
+    max_votes_label = max(votes, key=votes.get)
+    return max_votes_label
+
+train_data = list(zip(x_train, y_train))
+
+y_pred = [classify(test_point, train_data, radius = 3) for test_point in x_test]
+
+report = get_report(y_test, y_pred)
+print(report)
