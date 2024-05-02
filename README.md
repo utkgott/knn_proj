@@ -1,0 +1,2 @@
+The name of my project is Comparative Analysis  of implementing KNN using  different distance matrix
+I have used four uci datasets:- iris, wine, breast cancer wisconsin, bank note authentication and two artificial dataset such as two moon(make_moon) and cluster(make_blob) dataset , i have used two knn algorithms one normal one and the other uses radius instead of asking for k , i have used two distance matrix euclidean and manhattan
